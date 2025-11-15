@@ -47,23 +47,29 @@ app.use(
 /* --------------------------- CORS CONFIG --------------------------- */
 const FRONTEND = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
 const allowedOrigins = [
-  FRONTEND,
+  process.env.FRONTEND_URL,
   "http://localhost:5173",
   "https://solclothing.netlify.app",
   "https://solclothing-new.vercel.app",
-  "https://sólclothing.com",              // your human domain
-  "https://xn--slclothing-w2a.com"        // correct punycode domain
+  "https://solclothing.com",
+  "https://xn--slothing-w2a.com"
 ];
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.log("❌ BLOCKED BY CORS:", origin);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-
 app.options("*", cors());
 
 /* --------------------------- STATIC FILES --------------------------- */
