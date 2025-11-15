@@ -1,0 +1,186 @@
+const express = require("express");
+const router = express.Router();
+const multer = require("multer");
+const path = require("path");
+const Product = require("../models/Product");
+
+/* --------------------------- MULTER CONFIG --------------------------- */
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, "../hoodieimg")); 
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + "-" + file.originalname.replace(/\s+/g, "_"));
+  },
+});
+
+const upload = multer({ storage });
+
+/* ============================================================
+   ⭐ IMAGE UPLOAD (used by AddProduct.jsx)
+============================================================ */
+router.post("/upload", upload.single("file"), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({
+      success: false,
+      message: "Image upload failed",
+    });
+  }
+
+  const filePath = `/hoodieimg/${req.file.filename}`;
+  const fullUrl = `${req.protocol}://${req.get("host")}${filePath}`;
+
+  console.log("📸 Uploaded:", filePath);
+
+  res.json({
+    success: true,
+    filePath,
+    url: fullUrl,
+  });
+});
+
+/* ============================================================
+   ⭐ CREATE PRODUCT (Supports Couple Pack)
+============================================================ */
+router.post("/", upload.array("images", 10), async (req, res) => {
+  try {
+    console.log("📦 Incoming product data:", req.body);
+
+    // Normal uploads (not used for couple pack)
+    const imagePaths = Array.isArray(req.files)
+      ? req.files.map((file) => `/hoodieimg/${file.filename}`)
+      : [];
+
+    const parseJSON = (field) => {
+      if (!req.body[field]) return [];
+      try {
+        return typeof req.body[field] === "string"
+          ? JSON.parse(req.body[field])
+          : req.body[field];
+      } catch {
+        return [];
+      }
+    };
+
+    const parsedVariants = parseJSON("variants");
+    const parsedSizes = parseJSON("sizes");
+    const coupleA = parseJSON("coupleA");
+    const coupleB = parseJSON("coupleB");
+
+    /* ⭐⭐⭐ FIX ADDED HERE — COLLECT COUPLE PACK IMAGES ⭐⭐⭐ */
+    if (req.body.isCouplePack === "true" || req.body.isCouplePack === true) {
+      coupleA.forEach((v) => {
+        if (v.frontImage) imagePaths.push(v.frontImage);
+        if (v.backImage) imagePaths.push(v.backImage);
+      });
+
+      coupleB.forEach((v) => {
+        if (v.frontImage) imagePaths.push(v.frontImage);
+        if (v.backImage) imagePaths.push(v.backImage);
+      });
+    }
+    /* ⭐⭐⭐ END FIX ⭐⭐⭐ */
+
+    const productData = {
+      name: req.body.name,
+      description: req.body.description,
+      price: req.body.price,
+      category: req.body.category,
+      gender: req.body.gender,
+      sizes: parsedSizes,
+      variants: parsedVariants,
+      images: imagePaths,  // NOW CONTAINS COUPLE IMAGES
+
+      isCouplePack:
+        req.body.isCouplePack === true || req.body.isCouplePack === "true",
+
+      coupleA,
+      coupleB,
+    };
+
+    const product = new Product(productData);
+    await product.save();
+
+    console.log("✅ Product created:", product.name);
+    res.status(201).json({ success: true, product });
+
+  } catch (err) {
+    console.error("❌ Error adding product:", err);
+    res.status(500).json({
+      success: false,
+      message: "Error creating product",
+      error: err.message,
+    });
+  }
+});
+
+/* ============================================================
+   GET ALL PRODUCTS
+============================================================ */
+router.get("/", async (req, res) => {
+  try {
+    const products = await Product.find();
+    res.json({ success: true, products });
+  } catch (err) {
+    console.error("❌ Error fetching products:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+/* ============================================================
+   GET SINGLE PRODUCT
+============================================================ */
+router.get("/:id", async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product)
+      return res
+        .status(404)
+        .json({ success: false, message: "Product not found" });
+    res.json({ success: true, product });
+  } catch (err) {
+    console.error("❌ Error fetching product:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+/* ============================================================
+   UPDATE PRODUCT
+============================================================ */
+router.put("/:id", async (req, res) => {
+  try {
+    const updated = await Product.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
+
+    if (!updated)
+      return res
+        .status(404)
+        .json({ success: false, message: "Product not found" });
+
+    res.json({ success: true, product: updated });
+  } catch (err) {
+    console.error("❌ Error updating product:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+/* ============================================================
+   DELETE PRODUCT
+============================================================ */
+router.delete("/:id", async (req, res) => {
+  try {
+    const deleted = await Product.findByIdAndDelete(req.params.id);
+    if (!deleted)
+      return res
+        .status(404)
+        .json({ success: false, message: "Product not found" });
+
+    res.json({ success: true, message: "Product deleted" });
+  } catch (err) {
+    console.error("❌ Error deleting product:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+module.exports = router;
