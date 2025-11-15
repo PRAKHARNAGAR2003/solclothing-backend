@@ -3,8 +3,6 @@ const nodemailer = require("nodemailer");
 const sendEmail = async ({ email, subject, message }) => {
   try {
     const transporter = nodemailer.createTransport({
-      service: "gmail", // ← use Gmail service (more stable on Render)
-
       host: "smtp.gmail.com",
       port: 465,
       secure: true, // SSL
@@ -15,10 +13,12 @@ const sendEmail = async ({ email, subject, message }) => {
       },
 
       tls: {
-        rejectUnauthorized: false, // ← FIX Gmail/Render handshake timeout
+        rejectUnauthorized: false, // prevent Render/Gmail handshake errors
       },
 
-      connectionTimeout: 10000, // ← prevents ETIMEDOUT
+      connectionTimeout: 20000, // increased timeout to fix ETIMEDOUT
+      greetingTimeout: 20000,
+      socketTimeout: 20000,
     });
 
     const mailOptions = {
