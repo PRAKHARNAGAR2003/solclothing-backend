@@ -26,7 +26,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan("dev"));
 
-// Helmet with relaxed CSP for dev
 app.use(
   helmet({
     contentSecurityPolicy: false,
@@ -34,7 +33,6 @@ app.use(
   })
 );
 
-// Rate Limiter
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -44,12 +42,20 @@ app.use(
   })
 );
 
-/* --------------------------- CORS CONFIG --------------------------- */
+/* --------------------------- CORS CONFIG (UPDATED) --------------------------- */
 const FRONTEND = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
+
+const allowedOrigins = [
+  FRONTEND,
+  "http://localhost:5173",
+  "https://solclothing.netlify.app",
+  "https://sólclothing.com",
+  "https://xn--slclothing-gbb.com",   // ✔ REQUIRED FIX
+];
 
 app.use(
   cors({
-    origin: FRONTEND,
+    origin: allowedOrigins,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
@@ -60,26 +66,17 @@ app.options("*", cors());
 
 /* --------------------------- STATIC FILES --------------------------- */
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-app.use("/hoodieimg", express.static(path.join(__dirname, "hoodieimg")));  // ← REQUIRED FIX
+app.use("/hoodieimg", express.static(path.join(__dirname, "hoodieimg")));
 
 /* --------------------------- KEEP-ALIVE ROUTE --------------------------- */
-// ⭐ Added exactly as you requested — lightweight, safe, and does not change anything else
 app.get("/ping", (req, res) => {
   res.status(200).send("pong");
 });
 
 /* --------------------------- ROUTES --------------------------- */
-
-// Auth Routes
 app.use("/api/auth", require("./routes/auth"));
-
-// Product Routes
 app.use("/api/products", require("./routes/product"));
-
-// Order Routes
 app.use("/api/orders", require("./routes/orderRoutes"));
-
-// Payment Routes
 app.use("/api/payment", require("./routes/payment"));
 
 /* --------------------------- HEALTH CHECK --------------------------- */
