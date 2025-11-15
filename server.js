@@ -74,7 +74,7 @@ app.options("*", cors());
 
 /* --------------------------- STATIC FILES --------------------------- */
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-app.use("/hoodieimg", express.static(path.join(__dirname, "hoodieimg")));  // ← REQUIRED FIX
+app.use("/hoodieimg", express.static(path.join(__dirname, "hoodieImg")));  // ← REQUIRED FIX
 
 /* --------------------------- KEEP-ALIVE ROUTE --------------------------- */
 // ⭐ Added exactly as you requested — lightweight, safe, and does not change anything else
