@@ -26,7 +26,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan("dev"));
 
-// Helmet with relaxed CSP for dev
 app.use(
   helmet({
     contentSecurityPolicy: false,
@@ -34,7 +33,6 @@ app.use(
   })
 );
 
-// Rate Limiter
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -44,15 +42,18 @@ app.use(
   })
 );
 
-/* --------------------------- CORS CONFIG --------------------------- */
-const FRONTEND = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
+/* --------------------------- UPDATED CORS CONFIG --------------------------- */
+
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   "http://localhost:5173",
   "https://solclothing.netlify.app",
   "https://solclothing-new.vercel.app",
   "https://solclothing.com",
-  "https://xn--slothing-w2a.com"
+  "https://xn--slothing-w2a.com",
+
+  // ✅ You were missing THIS ONE (your Render logs showed this)
+  "https://solclothing-cp4f763y7-prakhar-nagars-projects.vercel.app"
 ];
 
 app.use(
@@ -70,30 +71,22 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
 app.options("*", cors());
 
 /* --------------------------- STATIC FILES --------------------------- */
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-app.use("/hoodieimg", express.static(path.join(__dirname, "hoodieImg")));  // ← REQUIRED FIX
+app.use("/hoodieimg", express.static(path.join(__dirname, "hoodieImg")));
 
 /* --------------------------- KEEP-ALIVE ROUTE --------------------------- */
-// ⭐ Added exactly as you requested — lightweight, safe, and does not change anything else
 app.get("/ping", (req, res) => {
   res.status(200).send("pong");
 });
 
 /* --------------------------- ROUTES --------------------------- */
-
-// Auth Routes
 app.use("/api/auth", require("./routes/auth"));
-
-// Product Routes
 app.use("/api/products", require("./routes/product"));
-
-// Order Routes
 app.use("/api/orders", require("./routes/orderRoutes"));
-
-// Payment Routes
 app.use("/api/payment", require("./routes/payment"));
 
 /* --------------------------- HEALTH CHECK --------------------------- */
