@@ -4,8 +4,8 @@ const sendEmail = async ({ email, subject, message }) => {
   try {
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
-      port: 465,
-      secure: true, // SSL
+      port: 587,              // ← Gmail strongly recommends 587 (TLS)
+      secure: false,          // ← must be false for port 587 STARTTLS
 
       auth: {
         user: process.env.SMTP_USER,
@@ -13,12 +13,13 @@ const sendEmail = async ({ email, subject, message }) => {
       },
 
       tls: {
-        rejectUnauthorized: false, // prevent Render/Gmail handshake errors
+        rejectUnauthorized: false,   // prevent Render/Gmail handshake issues
+        ciphers: "SSLv3",
       },
 
-      connectionTimeout: 20000, // increased timeout to fix ETIMEDOUT
-      greetingTimeout: 20000,
-      socketTimeout: 20000,
+      connectionTimeout: 30000,      // 30 sec timeout
+      greetingTimeout: 30000,
+      socketTimeout: 30000,
     });
 
     const mailOptions = {
