@@ -49,11 +49,13 @@ const allowedOrigins = [
   "http://localhost:5173",
   "https://solclothing.netlify.app",
   "https://solclothing-new.vercel.app",
+  "https://solclothing-ruby.vercel.app",  // ⭐ MUST ADD
+  "https://solclothing.vercel.app",
   "https://solclothing.com",
   "https://xn--slothing-w2a.com",
   "https://solclothing-cp4f763y7-prakhar-nagars-projects.vercel.app",
-  "https://solclothing.vercel.app",
 ];
+
 
 app.use(
   cors({
