@@ -51,7 +51,7 @@ const allowedOrigins = [
   "https://solclothing.netlify.app",
   "https://solclothing-new.vercel.app",
   "https://sólclothing.com",              // your human domain
-  "https://xn--slclothing-w2a.com"        // correct punycode domain
+  "https://xn--slclothing-gbb.com"        // correct punycode domain (updated)
 ];
 
 app.use(
