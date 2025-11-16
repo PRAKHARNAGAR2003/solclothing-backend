@@ -3,6 +3,7 @@ const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const sendEmail = require("../utils/sendEmail");
+const passwordResetTemplate = require("../utils/emailTemplate"); // ⭐ ADDED
 
 const cookieOptions = {
   httpOnly: true,
@@ -13,9 +14,11 @@ const cookieOptions = {
 };
 
 const setTokenCookie = (user, res) => {
-  const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || "7d",
-  });
+  const token = jwt.sign(
+    { id: user._id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
+  );
   res.cookie("token", token, cookieOptions);
   return token;
 };
@@ -74,7 +77,6 @@ exports.adminLogin = async (req, res) => {
     if (!email || !password)
       return res.status(400).json({ success: false, message: "Email & password required" });
 
-    // Fetch user with password
     const user = await User.findOne({ email }).select("+password");
 
     if (!user)
@@ -131,7 +133,7 @@ exports.getMe = async (req, res) => {
 };
 
 // ------------------------------------------------------
-// FORGOT PASSWORD
+// UPDATED FORGOT PASSWORD (HTML + RESEND)
 // ------------------------------------------------------
 exports.forgotPassword = async (req, res) => {
   try {
@@ -148,14 +150,21 @@ exports.forgotPassword = async (req, res) => {
     await user.save({ validateBeforeSave: false });
 
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
-    const message = `Click to reset: ${resetUrl}`;
 
-    await sendEmail({ email: user.email, subject: "Password Reset", message });
+    // ⭐ Beautiful HTML email
+    const htmlMessage = passwordResetTemplate(user.name, resetUrl);
+
+    await sendEmail({
+      email: user.email,
+      subject: "Reset Your SolClothing Password",
+      message: htmlMessage,
+    });
+
     res.status(200).json({ success: true, message: "Reset email sent" });
+
   } catch (err) {
     console.error("Forgot password error:", err);
 
-    // rollback
     if (req.body?.email) {
       const u = await User.findOne({ email: req.body.email });
       if (u) {
@@ -190,7 +199,7 @@ exports.resetPassword = async (req, res) => {
     if (!user)
       return res.status(400).json({ success: false, message: "Invalid or expired token" });
 
-    user.password = password; // hashed by pre-save
+    user.password = password;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
 

@@ -1,28 +1,20 @@
-const nodemailer = require("nodemailer");
+// backend/utils/sendEmail.js
+
+const { Resend } = require("resend");
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendEmail = async ({ email, subject, message }) => {
   try {
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false, // TLS
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
+    await resend.emails.send({
+      from: "SolClothing <onboarding@resend.dev>",  // ✔ works without domain setup
+      to: email,
+      subject: subject,
+      html: message,
     });
 
-    const mailOptions = {
-      from: `"SolClothing" <${process.env.SMTP_USER}>`,
-      to: email,
-      subject,
-      html: message,
-    };
-
-    await transporter.sendMail(mailOptions);
     console.log("📨 Email Sent Successfully to:", email);
   } catch (error) {
-    console.error("❌ Email Sending Error:", error);
+    console.error("❌ Resend Email Error:", error);
     throw new Error("Email could not be sent");
   }
 };
