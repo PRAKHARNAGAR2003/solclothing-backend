@@ -80,6 +80,9 @@ app.use("/api/products", require("./routes/product"));
 app.use("/api/orders", require("./routes/orderRoutes"));
 app.use("/api/payment", require("./routes/payment"));
 
+/* ⭐⭐⭐ ADDED REVIEW ROUTE (ONLY NEW CHANGE) ⭐⭐⭐ */
+app.use("/api/reviews", require("./routes/reviewRoutes"));
+
 /* --------------------------- HEALTH CHECK --------------------------- */
 app.get("/", (req, res) => res.send("✅ Backend running successfully"));
 
