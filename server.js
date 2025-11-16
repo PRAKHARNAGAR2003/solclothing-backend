@@ -67,7 +67,7 @@ app.options("*", cors());
 
 /* --------------------------- STATIC FILES --------------------------- */
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-app.use("/hoodieimg", express.static(path.join(__dirname, "hoodieimg")));
+app.use("/hoodieImg", express.static(path.join(__dirname, "hoodieImg")));
 
 /* --------------------------- KEEP-ALIVE ROUTE --------------------------- */
 app.get("/ping", (req, res) => {
