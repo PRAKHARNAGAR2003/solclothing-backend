@@ -51,9 +51,8 @@ const allowedOrigins = [
   "https://solclothing-new.vercel.app",
   "https://solclothing.com",
   "https://xn--slothing-w2a.com",
-
-  // ✅ You were missing THIS ONE (your Render logs showed this)
-  "https://solclothing-cp4f763y7-prakhar-nagars-projects.vercel.app"
+  "https://solclothing-cp4f763y7-prakhar-nagars-projects.vercel.app",
+  "https://solclothing.vercel.app",
 ];
 
 app.use(
