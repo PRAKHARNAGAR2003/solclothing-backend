@@ -49,8 +49,9 @@ const allowedOrigins = [
   FRONTEND,
   "http://localhost:5173",
   "https://solclothing.netlify.app",
-  "https://sólclothing.com",
-  "https://xn--slclothing-gbb.com",   // ✔ REQUIRED FIX
+  "https://solclothing-new.vercel.app",
+  "https://sólclothing.com",              // your human domain
+  "https://xn--slclothing-w2a.com"        // correct punycode domain
 ];
 
 app.use(
