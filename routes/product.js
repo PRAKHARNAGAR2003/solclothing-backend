@@ -5,9 +5,10 @@ const path = require("path");
 const Product = require("../models/Product");
 
 /* --------------------------- MULTER CONFIG --------------------------- */
+/* ⭐ FIXED: Correct folder name — hoodieImg (capital I) */
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "../hoodieimg"));
+    cb(null, path.join(__dirname, "../hoodieImg"));  // FIXED
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + "-" + file.originalname.replace(/\s+/g, "_"));
@@ -20,8 +21,7 @@ const upload = multer({ storage });
 const protectAdmin = require("../middleware/adminAuth");
 
 /* ============================================================
-   ⭐ IMAGE UPLOAD (used by AddProduct.jsx)
-   ⭐ ADMIN ONLY
+   ⭐ IMAGE UPLOAD (ADMIN ONLY)
 ============================================================ */
 router.post("/upload", protectAdmin, upload.single("file"), (req, res) => {
   if (!req.file) {
@@ -31,7 +31,8 @@ router.post("/upload", protectAdmin, upload.single("file"), (req, res) => {
     });
   }
 
-  const filePath = `/hoodieimg/${req.file.filename}`;
+  /* ⭐ FIXED: hoodieImg path */
+  const filePath = `/hoodieImg/${req.file.filename}`; 
   const fullUrl = `${req.protocol}://${req.get("host")}${filePath}`;
 
   console.log("📸 Uploaded:", filePath);
@@ -44,15 +45,15 @@ router.post("/upload", protectAdmin, upload.single("file"), (req, res) => {
 });
 
 /* ============================================================
-   ⭐ CREATE PRODUCT (Supports Couple Pack)
-   ⭐ ADMIN ONLY
+   ⭐ CREATE PRODUCT (ADMIN ONLY)
 ============================================================ */
 router.post("/", protectAdmin, upload.array("images", 10), async (req, res) => {
   try {
     console.log("📦 Incoming product data:", req.body);
 
+    /* ⭐ FIXED hoodieImg path */
     const imagePaths = Array.isArray(req.files)
-      ? req.files.map((file) => `/hoodieimg/${file.filename}`)
+      ? req.files.map((file) => `/hoodieImg/${file.filename}`)   // FIXED
       : [];
 
     const parseJSON = (field) => {
@@ -71,7 +72,7 @@ router.post("/", protectAdmin, upload.array("images", 10), async (req, res) => {
     const coupleA = parseJSON("coupleA");
     const coupleB = parseJSON("coupleB");
 
-    /* ⭐⭐⭐ FIX ADDED HERE — COLLECT COUPLE PACK IMAGES ⭐⭐⭐ */
+    /* ⭐ Add couple pack images safely */
     if (req.body.isCouplePack === "true" || req.body.isCouplePack === true) {
       coupleA.forEach((v) => {
         if (v.frontImage) imagePaths.push(v.frontImage);
@@ -83,7 +84,6 @@ router.post("/", protectAdmin, upload.array("images", 10), async (req, res) => {
         if (v.backImage) imagePaths.push(v.backImage);
       });
     }
-    /* ⭐⭐⭐ END FIX ⭐⭐⭐ */
 
     const productData = {
       name: req.body.name,
@@ -138,6 +138,7 @@ router.get("/:id", async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "Product not found" });
+
     res.json({ success: true, product });
   } catch (err) {
     console.error("❌ Error fetching product:", err);
@@ -146,8 +147,7 @@ router.get("/:id", async (req, res) => {
 });
 
 /* ============================================================
-   UPDATE PRODUCT
-   ⭐ ADMIN ONLY
+   UPDATE PRODUCT (ADMIN ONLY)
 ============================================================ */
 router.put("/:id", protectAdmin, async (req, res) => {
   try {
@@ -168,12 +168,12 @@ router.put("/:id", protectAdmin, async (req, res) => {
 });
 
 /* ============================================================
-   DELETE PRODUCT
-   ⭐ ADMIN ONLY
+   DELETE PRODUCT (ADMIN ONLY)
 ============================================================ */
 router.delete("/:id", protectAdmin, async (req, res) => {
   try {
     const deleted = await Product.findByIdAndDelete(req.params.id);
+
     if (!deleted)
       return res
         .status(404)
