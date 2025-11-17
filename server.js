@@ -50,8 +50,8 @@ const allowedOrigins = [
   "http://localhost:5173",
   "https://solclothing.netlify.app",
   "https://solclothing-new.vercel.app",
-  "https://sólclothing.com",              // your human domain
-  "https://xn--slclothing-gbb.com"        // correct punycode domain (updated)
+  "https://sólclothing.com",
+  "https://xn--slclothing-gbb.com"
 ];
 
 app.use(
@@ -79,8 +79,6 @@ app.use("/api/auth", require("./routes/auth"));
 app.use("/api/products", require("./routes/product"));
 app.use("/api/orders", require("./routes/orderRoutes"));
 app.use("/api/payment", require("./routes/payment"));
-
-/* ⭐⭐⭐ ADDED REVIEW ROUTE (ONLY NEW CHANGE) ⭐⭐⭐ */
 app.use("/api/reviews", require("./routes/reviewRoutes"));
 
 /* --------------------------- HEALTH CHECK --------------------------- */
@@ -95,7 +93,12 @@ app.use((err, req, res, next) => {
   });
 });
 
-/* --------------------------- START SERVER --------------------------- */
-app.listen(PORT, () =>
-  console.log(`🚀 Server running at: http://localhost:${PORT}`)
-);
+/* --------------------------- START SERVER (ONLY FOR LOCAL) --------------------------- */
+if (process.env.VERCEL !== "1") {
+  app.listen(PORT, () =>
+    console.log(`🚀 Server running at: http://localhost:${PORT}`)
+  );
+}
+
+/* --------------------------- EXPORT APP FOR VERCEL --------------------------- */
+module.exports = app;
