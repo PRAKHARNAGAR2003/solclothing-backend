@@ -3,8 +3,11 @@ const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const sendEmail = require("../utils/sendEmail");
-const passwordResetTemplate = require("../utils/emailTemplate"); // ⭐ ADDED
+const passwordResetTemplate = require("../utils/emailTemplate");
 
+// ------------------------------------------------------
+// COOKIE SETTINGS (WORKS WITH SAME DOMAIN)
+// ------------------------------------------------------
 const cookieOptions = {
   httpOnly: true,
   sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
@@ -14,7 +17,7 @@ const cookieOptions = {
 };
 
 // ------------------------------------------------------
-// USER TOKEN COOKIE
+// NORMAL USER TOKEN COOKIE
 // ------------------------------------------------------
 const setTokenCookie = (user, res) => {
   const token = jwt.sign(
@@ -22,12 +25,13 @@ const setTokenCookie = (user, res) => {
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
   );
+
   res.cookie("token", token, cookieOptions);
   return token;
 };
 
 // ------------------------------------------------------
-// ⭐ ADMIN TOKEN COOKIE (UPDATED FIX)
+// ⭐ ADMIN TOKEN COOKIE — FIXED (NO DOMAIN)
 // ------------------------------------------------------
 const setAdminTokenCookie = (user, res) => {
   const token = jwt.sign(
@@ -41,7 +45,7 @@ const setAdminTokenCookie = (user, res) => {
     secure: process.env.NODE_ENV === "production",
     sameSite: "None",
     path: "/",
-    domain: ".xn--slclothing-gbb.com",   // ✔ REQUIRED
+    // ❌ removed domain — browser now accepts the cookie
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
@@ -54,17 +58,24 @@ const setAdminTokenCookie = (user, res) => {
 exports.registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
+
     if (!name || !email || !password)
       return res.status(400).json({ success: false, message: "All fields required" });
 
     const exists = await User.findOne({ email });
+
     if (exists)
       return res.status(400).json({ success: false, message: "User already exists" });
 
     const user = await User.create({ name, email, password });
+
     setTokenCookie(user, res);
 
-    res.status(201).json({ success: true, message: "Registered", user: user.toJSON() });
+    res.status(201).json({
+      success: true,
+      message: "Registered",
+      user: user.toJSON(),
+    });
   } catch (err) {
     console.error("Register error:", err);
     res.status(500).json({ success: false, message: "Server error" });
@@ -77,15 +88,24 @@ exports.registerUser = async (req, res) => {
 exports.loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
+
     if (!email || !password)
       return res.status(400).json({ success: false, message: "Email & password required" });
 
     const user = await User.findOne({ email }).select("+password");
+
     if (!user || !(await user.matchPassword(password)))
-      return res.status(401).json({ success: false, message: "Invalid email or password" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid email or password" });
 
     setTokenCookie(user, res);
-    res.status(200).json({ success: true, message: "Logged in", user: user.toJSON() });
+
+    res.status(200).json({
+      success: true,
+      message: "Logged in",
+      user: user.toJSON(),
+    });
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).json({ success: false, message: "Server error" });
@@ -113,9 +133,8 @@ exports.adminLogin = async (req, res) => {
       return res.status(401).json({ success: false, message: "Invalid email or password" });
 
     if (user.role !== "admin")
-      return res.status(403).json({ success: false, message: "Access denied: Not an admin" });
+      return res.status(403).json({ success: false, message: "Access denied" });
 
-    // ⭐ Set separate admin token
     setAdminTokenCookie(user, res);
 
     res.status(200).json({
@@ -136,6 +155,7 @@ exports.logoutUser = async (req, res) => {
   try {
     res.clearCookie("token", { httpOnly: true, path: "/" });
     res.clearCookie("adminToken", { httpOnly: true, path: "/" });
+
     res.status(200).json({ success: true, message: "Logged out" });
   } catch (err) {
     console.error("Logout error:", err);
@@ -144,11 +164,12 @@ exports.logoutUser = async (req, res) => {
 };
 
 // ------------------------------------------------------
-// GET LOGGED-IN USER INFO
+// GET CURRENT USER
 // ------------------------------------------------------
 exports.getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
+
     if (!user)
       return res.status(404).json({ success: false, message: "User not found" });
 
@@ -160,7 +181,7 @@ exports.getMe = async (req, res) => {
 };
 
 // ------------------------------------------------------
-// UPDATED FORGOT PASSWORD
+// FORGOT PASSWORD
 // ------------------------------------------------------
 exports.forgotPassword = async (req, res) => {
   try {
@@ -170,6 +191,7 @@ exports.forgotPassword = async (req, res) => {
       return res.status(400).json({ success: false, message: "Email required" });
 
     const user = await User.findOne({ email });
+
     if (!user)
       return res.status(404).json({ success: false, message: "User not found" });
 
@@ -187,18 +209,8 @@ exports.forgotPassword = async (req, res) => {
     });
 
     res.status(200).json({ success: true, message: "Reset email sent" });
-
   } catch (err) {
     console.error("Forgot password error:", err);
-
-    if (req.body?.email) {
-      const u = await User.findOne({ email: req.body.email });
-      if (u) {
-        u.resetPasswordToken = undefined;
-        u.resetPasswordExpire = undefined;
-        await u.save({ validateBeforeSave: false });
-      }
-    }
 
     res.status(500).json({ success: false, message: "Email could not be sent" });
   }
