@@ -15,7 +15,11 @@ const {
 const Order = require("../models/Order");
 const Product = require("../models/Product");
 
-const { protect, admin } = require("../middleware/authMiddleware");
+// USER middleware (keep)
+const { protect } = require("../middleware/authMiddleware");
+
+// NEW ADMIN TOKEN middleware
+const protectAdmin = require("../middleware/adminAuth");
 
 
 // ====================================================
@@ -41,23 +45,23 @@ router.get("/my-orders", protect, getMyOrders);
 // ====================================================
 // 5️⃣ ADMIN: ALL ORDERS
 // ====================================================
-router.get("/admin/orders", protect, admin, getAllOrdersSplit);
+router.get("/admin/orders", protectAdmin, getAllOrdersSplit);
 
 // ====================================================
 // 6️⃣ ADMIN: MARK DELIVERED
 // ====================================================
-router.put("/admin/deliver/:id", protect, admin, markDelivered);
-// ====================================================
-// NEW ⭐  Admin: Mark Order as PAID (for COD)
-// ====================================================
-router.put("/admin/pay/:id", protect, admin, markPaid);
-
-
+router.put("/admin/deliver/:id", protectAdmin, markDelivered);
 
 // ====================================================
-// 📊 7️⃣ ADMIN DASHBOARD STATS  ✅ ADD THIS HERE
+// NEW ⭐ Admin: Mark Order as PAID (for COD)
 // ====================================================
-router.get("/admin/stats", protect, admin, async (req, res) => {
+router.put("/admin/pay/:id", protectAdmin, markPaid);
+
+
+// ====================================================
+// 📊 7️⃣ ADMIN DASHBOARD STATS
+// ====================================================
+router.get("/admin/stats", protectAdmin, async (req, res) => {
   try {
     const orders = await Order.find({});
     const products = await Product.find({});
@@ -91,7 +95,7 @@ router.get("/admin/stats", protect, admin, async (req, res) => {
 
 
 // ⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐
-// ⭐ MUST BE LAST ROUTE — dynamic /:id ⭐
+// ⭐ MUST BE LAST ROUTE — dynamic /:id
 // ⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐
 router.get("/:id", getOrderById);
 
