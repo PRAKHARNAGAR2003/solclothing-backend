@@ -2,7 +2,6 @@
 require("dotenv").config();
 const express = require("express");
 const cookieParser = require("cookie-parser");
-const cors = require("cors");
 const morgan = require("morgan");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
@@ -12,21 +11,16 @@ const path = require("path");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-/* ------------------------------------------- DB CONNECT ------------------------------------------- */
-connectDB()
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch((err) => {
-    console.error("❌ DB connect error:", err);
-    process.exit(1);
-  });
+/* -------------------- CONNECT DB -------------------- */
+connectDB();
 
-/* ------------------------------------------- BASIC MIDDLEWARE ------------------------------------------- */
-app.use(express.json({ limit: "20mb" }));
+/* -------------------- BASIC MIDDLEWARE -------------------- */
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan("dev"));
 
-/* ------------------------------------------- FIXED CORS FOR VERCEL ------------------------------------------- */
+/* -------------------- WORKING CORS FIX -------------------- */
 const allowedOrigins = [
   "https://xn--slclothing-gbb.com",
   "https://www.xn--slclothing-gbb.com",
@@ -35,27 +29,33 @@ const allowedOrigins = [
   "http://localhost:3000",
 ];
 
-// 🔥 THIS IS THE ONLY CORS CONFIG THAT WORKS ON VERCEL
 app.use((req, res, next) => {
   const origin = req.headers.origin;
 
   if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.header("Access-Control-Allow-Origin", origin);
   }
 
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.setHeader("Access-Control-Expose-Headers", "Set-Cookie");
+  res.header("Access-Control-Allow-Credentials", "true");
+  res.header(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+  );
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, X-Requested-With"
+  );
+  res.header("Access-Control-Expose-Headers", "Set-Cookie");
 
+  // 🔥 FIX THE PREFLIGHT 500 ERROR 🔥
   if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
+    return res.sendStatus(204);
   }
 
   next();
 });
 
-/* ------------------------------------------- HELMET (AFTER CORS) ------------------------------------------- */
+/* -------------------- HELMET (after CORS) -------------------- */
 app.use(
   helmet({
     contentSecurityPolicy: false,
@@ -63,48 +63,31 @@ app.use(
   })
 );
 
-/* ------------------------------------------- RATE LIMIT ------------------------------------------- */
+/* -------------------- RATE LIMIT -------------------- */
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 300,
-    standardHeaders: true,
-    legacyHeaders: false,
   })
 );
 
-/* ------------------------------------------- STATIC FILES ------------------------------------------- */
+/* -------------------- STATIC FILES -------------------- */
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/hoodieImg", express.static(path.join(__dirname, "hoodieImg")));
 
-/* ------------------------------------------- KEEP ALIVE ------------------------------------------- */
-app.get("/ping", (req, res) => res.status(200).send("pong"));
-
-/* ------------------------------------------- ROUTES ------------------------------------------- */
+/* -------------------- ROUTES -------------------- */
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/products", require("./routes/product"));
 app.use("/api/orders", require("./routes/orderRoutes"));
 app.use("/api/payment", require("./routes/payment"));
 app.use("/api/reviews", require("./routes/reviewRoutes"));
 
-/* ------------------------------------------- HEALTH CHECK ------------------------------------------- */
-app.get("/", (req, res) => res.send("✅ Backend running successfully"));
+/* -------------------- HEALTH -------------------- */
+app.get("/", (req, res) => res.send("Backend OK"));
 
-/* ------------------------------------------- ERROR HANDLER ------------------------------------------- */
-app.use((err, req, res, next) => {
-  console.error("🔥 GLOBAL ERROR:", err);
-  res.status(500).json({
-    success: false,
-    message: err.message || "Server error",
-  });
-});
-
-/* ------------------------------------------- START (LOCAL ONLY) ------------------------------------------- */
+/* -------------------- LOCAL SERVER -------------------- */
 if (process.env.VERCEL !== "1") {
-  app.listen(PORT, () =>
-    console.log(`🚀 Server running at: http://localhost:${PORT}`)
-  );
+  app.listen(PORT, () => console.log("Server running on port", PORT));
 }
 
-/* ------------------------------------------- EXPORT FOR VERCEL ------------------------------------------- */
 module.exports = app;
