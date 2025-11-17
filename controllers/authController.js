@@ -10,15 +10,18 @@ const passwordResetTemplate = require("../utils/emailTemplate");
 // ------------------------------------------------------
 const cookieOptions = {
   httpOnly: true,
-  sameSite: "None", // ⭐ required for cross-site cookies on vercel
+  sameSite: "None",     // required for cross-site cookies
   secure: process.env.NODE_ENV === "production",
   path: "/",
   maxAge: 7 * 24 * 60 * 60 * 1000,
+
+  // IMPORTANT: MUST include dot at beginning
   domain:
     process.env.NODE_ENV === "production"
-      ? "xn--slclothing-gbb.com" // ⭐ only applied on production
+      ? ".xn--slclothing-gbb.com"  // punycode domain
       : undefined,
 };
+
 
 // ------------------------------------------------------
 // NORMAL USER TOKEN COOKIE
