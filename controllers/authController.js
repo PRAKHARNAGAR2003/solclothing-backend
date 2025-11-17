@@ -13,6 +13,9 @@ const cookieOptions = {
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
+// ------------------------------------------------------
+// USER TOKEN COOKIE
+// ------------------------------------------------------
 const setTokenCookie = (user, res) => {
   const token = jwt.sign(
     { id: user._id, role: user.role },
@@ -20,6 +23,28 @@ const setTokenCookie = (user, res) => {
     { expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
   );
   res.cookie("token", token, cookieOptions);
+  return token;
+};
+
+// ------------------------------------------------------
+// ⭐ ADMIN TOKEN COOKIE (NEW)
+// ------------------------------------------------------
+const setAdminTokenCookie = (user, res) => {
+  const token = jwt.sign(
+    { id: user._id, role: "admin" },
+    process.env.ADMIN_JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+
+  res.cookie("adminToken", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+    path: "/",
+    domain: ".xn--slclothing-gbb.com", // IMPORTANT FOR LIVE SITE
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+
   return token;
 };
 
@@ -68,7 +93,7 @@ exports.loginUser = async (req, res) => {
 };
 
 // ------------------------------------------------------
-// ⭐ ADMIN LOGIN (NEW)
+// ⭐ ADMIN LOGIN (UPDATED)
 // ------------------------------------------------------
 exports.adminLogin = async (req, res) => {
   try {
@@ -90,7 +115,8 @@ exports.adminLogin = async (req, res) => {
     if (user.role !== "admin")
       return res.status(403).json({ success: false, message: "Access denied: Not an admin" });
 
-    setTokenCookie(user, res);
+    // ⭐ Set separate admin token
+    setAdminTokenCookie(user, res);
 
     res.status(200).json({
       success: true,
@@ -109,6 +135,7 @@ exports.adminLogin = async (req, res) => {
 exports.logoutUser = async (req, res) => {
   try {
     res.clearCookie("token", { httpOnly: true, path: "/" });
+    res.clearCookie("adminToken", { httpOnly: true, path: "/" });
     res.status(200).json({ success: true, message: "Logged out" });
   } catch (err) {
     console.error("Logout error:", err);
