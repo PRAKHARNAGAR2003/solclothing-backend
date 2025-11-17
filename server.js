@@ -12,7 +12,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 /* -------------------- FIX FOR VERCEL PROXY -------------------- */
-app.set("trust proxy", 1); // ⭐ REQUIRED TO STOP X-FORWARDED-FOR ERROR
+app.set("trust proxy", 1); // ⭐ REQUIRED TO STOP X-FORWARDED-FOR & RATE LIMIT ERRORS
 
 /* -------------------- CONNECT DB -------------------- */
 connectDB();
@@ -23,11 +23,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan("dev"));
 
-/* -------------------- CORS -------------------- */
+/* -------------------- CORS (FINAL FIXED VERSION) -------------------- */
 const allowedOrigins = [
   "https://xn--slclothing-gbb.com",
   "https://www.xn--slclothing-gbb.com",
   "https://solclothing-new.vercel.app",
+  "https://solclothing-backend.vercel.app",   // ⭐ ADDED THIS
   "http://localhost:5173",
   "http://localhost:3000"
 ];
@@ -40,11 +41,19 @@ app.use((req, res, next) => {
   }
 
   res.header("Access-Control-Allow-Credentials", "true");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+  res.header(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+  );
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, X-Requested-With"
+  );
   res.header("Access-Control-Expose-Headers", "Set-Cookie");
 
-  if (req.method === "OPTIONS") return res.sendStatus(204);
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
 
   next();
 });
@@ -53,7 +62,7 @@ app.use((req, res, next) => {
 app.use(
   helmet({
     contentSecurityPolicy: false,
-    crossOriginResourcePolicy: false
+    crossOriginResourcePolicy: false,
   })
 );
 
@@ -61,7 +70,7 @@ app.use(
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 300
+    max: 300,
   })
 );
 
@@ -77,7 +86,9 @@ app.use("/api/payment", require("./routes/payment"));
 app.use("/api/reviews", require("./routes/reviewRoutes"));
 
 /* -------------------- HEALTH -------------------- */
-app.get("/", (req, res) => res.send("Backend OK + Vercel Express Running"));
+app.get("/", (req, res) => {
+  res.send("Backend OK + Vercel Express Running");
+});
 
 /* -------------------- LOCAL SERVER -------------------- */
 if (process.env.VERCEL !== "1") {
