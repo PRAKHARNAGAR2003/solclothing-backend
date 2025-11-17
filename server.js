@@ -42,15 +42,20 @@ app.use(
   })
 );
 
+/* --------------------------- CREDENTIAL HEADER (VERY IMPORTANT) --------------------------- */
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Credentials", "true");
+  next();
+});
 
-// --------------------------- CORS CONFIG (VERY IMPORTANT) ---------------------------
+/* --------------------------- CORS CONFIG --------------------------- */
 const allowedOrigins = [
   "https://sólclothing.com",
-  "https://xn--slclothing-gbb.com",
   "https://www.sólclothing.com",
+  "https://xn--slclothing-gbb.com",
   "https://www.xn--slclothing-gbb.com",
 
-  "https://solclothing-new.vercel.app", // preview
+  "https://solclothing-new.vercel.app",
   "http://localhost:5173",
   "http://localhost:3000",
 ];
@@ -59,6 +64,7 @@ app.use(
   cors({
     origin: function (origin, callback) {
       if (!origin) return callback(null, true);
+
       if (allowedOrigins.includes(origin)) return callback(null, true);
 
       console.log("❌ CORS BLOCKED:", origin);
@@ -72,13 +78,8 @@ app.use(
   })
 );
 
-// Handle OPTIONS preflight for all routes
+// Preflight handler
 app.options("*", cors());
-
-
-// ⭐ VERY IMPORTANT FOR ADMIN LOGIN + PREVIEW ON VERCEL
-app.options("*", cors());
-
 
 /* --------------------------- STATIC FILES --------------------------- */
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
