@@ -50,8 +50,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "https://solclothing.netlify.app",
   "https://solclothing-new.vercel.app",
-  "https://sólclothing.com",
-  "https://xn--slclothing-gbb.com"
+  "https://xn--slclothing-gbb.com"   // your correct domain
 ];
 
 app.use(
