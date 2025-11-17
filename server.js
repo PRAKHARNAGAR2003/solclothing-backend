@@ -11,6 +11,9 @@ const path = require("path");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+/* -------------------- FIX FOR VERCEL PROXY -------------------- */
+app.set("trust proxy", 1); // ⭐ REQUIRED TO STOP X-FORWARDED-FOR ERROR
+
 /* -------------------- CONNECT DB -------------------- */
 connectDB();
 
@@ -20,7 +23,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan("dev"));
 
-/* -------------------- WORKING CORS FIX -------------------- */
+/* -------------------- CORS -------------------- */
 const allowedOrigins = [
   "https://xn--slclothing-gbb.com",
   "https://www.xn--slclothing-gbb.com",
@@ -37,25 +40,16 @@ app.use((req, res, next) => {
   }
 
   res.header("Access-Control-Allow-Credentials", "true");
-  res.header(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-  );
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, X-Requested-With"
-  );
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
   res.header("Access-Control-Expose-Headers", "Set-Cookie");
 
-  // ⭐ Make preflight requests ALWAYS return early
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(204);
-  }
+  if (req.method === "OPTIONS") return res.sendStatus(204);
 
   next();
 });
 
-/* -------------------- HELMET (after CORS) -------------------- */
+/* -------------------- HELMET -------------------- */
 app.use(
   helmet({
     contentSecurityPolicy: false,
