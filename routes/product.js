@@ -7,7 +7,7 @@ const Product = require("../models/Product");
 /* --------------------------- MULTER CONFIG --------------------------- */
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "../hoodieimg")); 
+    cb(null, path.join(__dirname, "../hoodieimg"));
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + "-" + file.originalname.replace(/\s+/g, "_"));
@@ -16,10 +16,14 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
+/* --------------------------- ADMIN MIDDLEWARE --------------------------- */
+const protectAdmin = require("../middleware/adminAuth");
+
 /* ============================================================
    ⭐ IMAGE UPLOAD (used by AddProduct.jsx)
+   ⭐ ADMIN ONLY
 ============================================================ */
-router.post("/upload", upload.single("file"), (req, res) => {
+router.post("/upload", protectAdmin, upload.single("file"), (req, res) => {
   if (!req.file) {
     return res.status(400).json({
       success: false,
@@ -41,12 +45,12 @@ router.post("/upload", upload.single("file"), (req, res) => {
 
 /* ============================================================
    ⭐ CREATE PRODUCT (Supports Couple Pack)
+   ⭐ ADMIN ONLY
 ============================================================ */
-router.post("/", upload.array("images", 10), async (req, res) => {
+router.post("/", protectAdmin, upload.array("images", 10), async (req, res) => {
   try {
     console.log("📦 Incoming product data:", req.body);
 
-    // Normal uploads (not used for couple pack)
     const imagePaths = Array.isArray(req.files)
       ? req.files.map((file) => `/hoodieimg/${file.filename}`)
       : [];
@@ -89,11 +93,9 @@ router.post("/", upload.array("images", 10), async (req, res) => {
       gender: req.body.gender,
       sizes: parsedSizes,
       variants: parsedVariants,
-      images: imagePaths,  // NOW CONTAINS COUPLE IMAGES
-
+      images: imagePaths,
       isCouplePack:
         req.body.isCouplePack === true || req.body.isCouplePack === "true",
-
       coupleA,
       coupleB,
     };
@@ -103,7 +105,6 @@ router.post("/", upload.array("images", 10), async (req, res) => {
 
     console.log("✅ Product created:", product.name);
     res.status(201).json({ success: true, product });
-
   } catch (err) {
     console.error("❌ Error adding product:", err);
     res.status(500).json({
@@ -115,7 +116,7 @@ router.post("/", upload.array("images", 10), async (req, res) => {
 });
 
 /* ============================================================
-   GET ALL PRODUCTS
+   GET ALL PRODUCTS (PUBLIC)
 ============================================================ */
 router.get("/", async (req, res) => {
   try {
@@ -128,7 +129,7 @@ router.get("/", async (req, res) => {
 });
 
 /* ============================================================
-   GET SINGLE PRODUCT
+   GET SINGLE PRODUCT (PUBLIC)
 ============================================================ */
 router.get("/:id", async (req, res) => {
   try {
@@ -146,8 +147,9 @@ router.get("/:id", async (req, res) => {
 
 /* ============================================================
    UPDATE PRODUCT
+   ⭐ ADMIN ONLY
 ============================================================ */
-router.put("/:id", async (req, res) => {
+router.put("/:id", protectAdmin, async (req, res) => {
   try {
     const updated = await Product.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
@@ -167,8 +169,9 @@ router.put("/:id", async (req, res) => {
 
 /* ============================================================
    DELETE PRODUCT
+   ⭐ ADMIN ONLY
 ============================================================ */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", protectAdmin, async (req, res) => {
   try {
     const deleted = await Product.findByIdAndDelete(req.params.id);
     if (!deleted)
