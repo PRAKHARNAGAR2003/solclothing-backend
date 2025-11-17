@@ -51,11 +51,8 @@ app.use((req, res, next) => {
 /* --------------------------- CORS CONFIG --------------------------- */
 // -------------------- FIXED CORS CONFIG FOR VERCEL --------------------
 const allowedOrigins = [
-  "https://sólclothing.com",
-  "https://www.sólclothing.com",
   "https://xn--slclothing-gbb.com",
   "https://www.xn--slclothing-gbb.com",
-
   "https://solclothing-new.vercel.app",
   "http://localhost:5173",
   "http://localhost:3000",
