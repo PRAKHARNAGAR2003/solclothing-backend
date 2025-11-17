@@ -6,19 +6,14 @@ const sendEmail = require("../utils/sendEmail");
 const passwordResetTemplate = require("../utils/emailTemplate");
 
 // ------------------------------------------------------
-// COOKIE SETTINGS (WORKS ON VERCEL + CUSTOM DOMAIN)
-// ------------------------------------------------------
-// ------------------------------------------------------
-// COOKIE SETTINGS (VERCEL + CUSTOM DOMAIN FIXED)
+// COOKIE SETTINGS (VERCEL + CUSTOM DOMAIN)
 // ------------------------------------------------------
 const cookieOptions = {
   httpOnly: true,
   sameSite: "None",
-  secure: true,            // always true on Vercel
+  secure: true,
   path: "/",
   maxAge: 7 * 24 * 60 * 60 * 1000,
-
-  // FIXED: NO LEADING DOT
   domain:
     process.env.NODE_ENV === "production"
       ? "xn--slclothing-gbb.com"
@@ -26,13 +21,13 @@ const cookieOptions = {
 };
 
 // ------------------------------------------------------
-// SET USER TOKEN COOKIE
+// NORMAL USER TOKEN COOKIE
 // ------------------------------------------------------
 const setTokenCookie = (user, res) => {
   const token = jwt.sign(
     { id: user._id, role: user.role },
     process.env.JWT_SECRET,
-    { expiresIn: "7d" }
+    { expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
   );
 
   res.cookie("token", token, {
@@ -44,7 +39,7 @@ const setTokenCookie = (user, res) => {
 };
 
 // ------------------------------------------------------
-// SET ADMIN TOKEN COOKIE
+// ADMIN TOKEN COOKIE
 // ------------------------------------------------------
 const setAdminTokenCookie = (user, res) => {
   const token = jwt.sign(
@@ -57,44 +52,6 @@ const setAdminTokenCookie = (user, res) => {
     ...cookieOptions,
     httpOnly: true,
   });
-
-  return token;
-};
-
-
-
-// ------------------------------------------------------
-// NORMAL USER TOKEN COOKIE
-// ------------------------------------------------------
-const setTokenCookie = (user, res) => {
-  const token = jwt.sign(
-    { id: user._id, role: user.role },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
-  );
-
-  res.cookie("token", token, cookieOptions);
-  return token;
-};
-
-// ------------------------------------------------------
-// ⭐ ADMIN TOKEN COOKIE (NOW FIXED)
-// ------------------------------------------------------
-const setAdminTokenCookie = (user, res) => {
-  const token = jwt.sign(
-    { id: user._id, role: "admin" },
-    process.env.ADMIN_JWT_SECRET,
-    { expiresIn: "7d" }
-  );
-
-  res.cookie(
-    "adminToken",
-    token,
-    {
-      ...cookieOptions,       // ⭐ use same config
-      httpOnly: true,
-    }
-  );
 
   return token;
 };
@@ -130,7 +87,7 @@ exports.registerUser = async (req, res) => {
 };
 
 // ------------------------------------------------------
-// NORMAL USER LOGIN
+// USER LOGIN
 // ------------------------------------------------------
 exports.loginUser = async (req, res) => {
   try {
@@ -142,9 +99,7 @@ exports.loginUser = async (req, res) => {
     const user = await User.findOne({ email }).select("+password");
 
     if (!user || !(await user.matchPassword(password)))
-      return res
-        .status(401)
-        .json({ success: false, message: "Invalid email or password" });
+      return res.status(401).json({ success: false, message: "Invalid email or password" });
 
     setTokenCookie(user, res);
 
@@ -160,7 +115,7 @@ exports.loginUser = async (req, res) => {
 };
 
 // ------------------------------------------------------
-// ⭐ ADMIN LOGIN
+// ADMIN LOGIN
 // ------------------------------------------------------
 exports.adminLogin = async (req, res) => {
   try {
@@ -258,7 +213,6 @@ exports.forgotPassword = async (req, res) => {
     res.status(200).json({ success: true, message: "Reset email sent" });
   } catch (err) {
     console.error("Forgot password error:", err);
-
     res.status(500).json({ success: false, message: "Email could not be sent" });
   }
 };
