@@ -27,7 +27,7 @@ const setTokenCookie = (user, res) => {
 };
 
 // ------------------------------------------------------
-// ⭐ ADMIN TOKEN COOKIE (NEW)
+// ⭐ ADMIN TOKEN COOKIE (UPDATED FIX)
 // ------------------------------------------------------
 const setAdminTokenCookie = (user, res) => {
   const token = jwt.sign(
@@ -41,7 +41,7 @@ const setAdminTokenCookie = (user, res) => {
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
     path: "/",
-    domain: "xn--slclothing-gbb.com", // IMPORTANT FOR LIVE SITE
+    // ❌ domain removed — backend cannot set cookies for xn--slclothing-gbb.com
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
@@ -93,7 +93,7 @@ exports.loginUser = async (req, res) => {
 };
 
 // ------------------------------------------------------
-// ⭐ ADMIN LOGIN (UPDATED)
+// ⭐ ADMIN LOGIN
 // ------------------------------------------------------
 exports.adminLogin = async (req, res) => {
   try {
@@ -160,7 +160,7 @@ exports.getMe = async (req, res) => {
 };
 
 // ------------------------------------------------------
-// UPDATED FORGOT PASSWORD (HTML + RESEND)
+// UPDATED FORGOT PASSWORD
 // ------------------------------------------------------
 exports.forgotPassword = async (req, res) => {
   try {
@@ -178,7 +178,6 @@ exports.forgotPassword = async (req, res) => {
 
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
-    // ⭐ Beautiful HTML email
     const htmlMessage = passwordResetTemplate(user.name, resetUrl);
 
     await sendEmail({
