@@ -42,24 +42,32 @@ app.use(
   })
 );
 
-/* --------------------------- CORS CONFIG (VERY IMPORTANT) --------------------------- */
+
+// --------------------------- CORS CONFIG (VERY IMPORTANT) ---------------------------
 const allowedOrigins = [
-  "https://www.xn--slclothing-gbb.com",
+  "https://solclothing-new.vercel.app",
   "https://xn--slclothing-gbb.com",
-  "http://localhost:5173",
-  "https://solclothing-new.vercel.app"
+  "https://www.xn--slclothing-gbb.com",
 ];
 
 app.use(
   cors({
-    origin: allowedOrigins,
-    credentials: true, // MUST for cookies
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      console.log("❌ CORS blocked:", origin);
+      return callback(new Error("Not allowed by CORS"), false);
+    },
+    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
+// ⭐ VERY IMPORTANT FOR ADMIN LOGIN + PREVIEW ON VERCEL
 app.options("*", cors());
+
 
 /* --------------------------- STATIC FILES --------------------------- */
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
