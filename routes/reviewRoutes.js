@@ -2,7 +2,10 @@ const express = require("express");
 const Review = require("../models/Review");
 const router = express.Router();
 
-// Add Review
+// ⭐ Admin Middleware (for future admin review delete/update)
+const protectAdmin = require("../middleware/adminAuth");
+
+// Add Review (PUBLIC)
 router.post("/", async (req, res) => {
   try {
     const { name, rating, message } = req.body;
@@ -15,7 +18,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Get All Reviews
+// Get All Reviews (PUBLIC)
 router.get("/", async (req, res) => {
   try {
     const reviews = await Review.find().sort({ createdAt: -1 });
