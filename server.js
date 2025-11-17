@@ -44,9 +44,10 @@ app.use(
 
 /* --------------------------- CORS CONFIG (VERY IMPORTANT) --------------------------- */
 const allowedOrigins = [
+  "https://www.xn--slclothing-gbb.com",
+  "https://xn--slclothing-gbb.com",
   "http://localhost:5173",
-  "https://solclothing-new.vercel.app",
-  "https://xn--slclothing-gbb.com", // ✅ YOUR LIVE DOMAIN
+  "https://solclothing-new.vercel.app"
 ];
 
 app.use(
