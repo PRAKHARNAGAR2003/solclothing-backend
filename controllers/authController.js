@@ -45,12 +45,12 @@ const setAdminTokenCookie = (user, res) => {
     secure: process.env.NODE_ENV === "production",
     sameSite: "None",
     path: "/",
-    // ❌ removed domain — browser now accepts the cookie
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
   return token;
 };
+
 
 // ------------------------------------------------------
 // USER REGISTRATION
