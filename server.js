@@ -49,6 +49,7 @@ app.use((req, res, next) => {
 });
 
 /* --------------------------- CORS CONFIG --------------------------- */
+// -------------------- FIXED CORS CONFIG FOR VERCEL --------------------
 const allowedOrigins = [
   "https://sólclothing.com",
   "https://www.sólclothing.com",
@@ -60,23 +61,25 @@ const allowedOrigins = [
   "http://localhost:3000",
 ];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
 
-      if (allowedOrigins.includes(origin)) return callback(null, true);
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
 
-      console.log("❌ CORS BLOCKED:", origin);
-      return callback(new Error("Not allowed by CORS"));
-    },
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    exposedHeaders: ["Set-Cookie"],
-  })
-);
+  // Handle preflight request
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+
+  next();
+});
+
 
 // Preflight handler
 app.options("*", cors());
