@@ -8,19 +8,57 @@ const passwordResetTemplate = require("../utils/emailTemplate");
 // ------------------------------------------------------
 // COOKIE SETTINGS (WORKS ON VERCEL + CUSTOM DOMAIN)
 // ------------------------------------------------------
+// ------------------------------------------------------
+// COOKIE SETTINGS (VERCEL + CUSTOM DOMAIN FIXED)
+// ------------------------------------------------------
 const cookieOptions = {
   httpOnly: true,
   sameSite: "None",
-  secure: process.env.NODE_ENV === "production",
+  secure: true,            // always true on Vercel
   path: "/",
   maxAge: 7 * 24 * 60 * 60 * 1000,
 
-  // Production uses punycode domain
-  // Localhost & Vercel preview use undefined (no domain)
+  // FIXED: NO LEADING DOT
   domain:
     process.env.NODE_ENV === "production"
-      ? ".xn--slclothing-gbb.com"
+      ? "xn--slclothing-gbb.com"
       : undefined,
+};
+
+// ------------------------------------------------------
+// SET USER TOKEN COOKIE
+// ------------------------------------------------------
+const setTokenCookie = (user, res) => {
+  const token = jwt.sign(
+    { id: user._id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+
+  res.cookie("token", token, {
+    ...cookieOptions,
+    httpOnly: true,
+  });
+
+  return token;
+};
+
+// ------------------------------------------------------
+// SET ADMIN TOKEN COOKIE
+// ------------------------------------------------------
+const setAdminTokenCookie = (user, res) => {
+  const token = jwt.sign(
+    { id: user._id, role: "admin" },
+    process.env.ADMIN_JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+
+  res.cookie("adminToken", token, {
+    ...cookieOptions,
+    httpOnly: true,
+  });
+
+  return token;
 };
 
 
