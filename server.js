@@ -1,4 +1,4 @@
-// backend/server.js
+// server.js
 require("dotenv").config();
 const express = require("express");
 const cookieParser = require("cookie-parser");
@@ -26,7 +26,7 @@ const allowedOrigins = [
   "https://www.xn--slclothing-gbb.com",
   "https://solclothing-new.vercel.app",
   "http://localhost:5173",
-  "http://localhost:3000",
+  "http://localhost:3000"
 ];
 
 app.use((req, res, next) => {
@@ -47,7 +47,7 @@ app.use((req, res, next) => {
   );
   res.header("Access-Control-Expose-Headers", "Set-Cookie");
 
-  // 🔥 FIX THE PREFLIGHT 500 ERROR 🔥
+  // ⭐ Make preflight requests ALWAYS return early
   if (req.method === "OPTIONS") {
     return res.sendStatus(204);
   }
@@ -59,7 +59,7 @@ app.use((req, res, next) => {
 app.use(
   helmet({
     contentSecurityPolicy: false,
-    crossOriginResourcePolicy: false,
+    crossOriginResourcePolicy: false
   })
 );
 
@@ -67,7 +67,7 @@ app.use(
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 300,
+    max: 300
   })
 );
 
@@ -83,11 +83,12 @@ app.use("/api/payment", require("./routes/payment"));
 app.use("/api/reviews", require("./routes/reviewRoutes"));
 
 /* -------------------- HEALTH -------------------- */
-app.get("/", (req, res) => res.send("Backend OK"));
+app.get("/", (req, res) => res.send("Backend OK + Vercel Express Running"));
 
 /* -------------------- LOCAL SERVER -------------------- */
 if (process.env.VERCEL !== "1") {
   app.listen(PORT, () => console.log("Server running on port", PORT));
 }
 
+/* -------------------- EXPORT FOR VERCEL -------------------- */
 module.exports = app;
