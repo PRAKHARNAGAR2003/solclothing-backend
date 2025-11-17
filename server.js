@@ -42,20 +42,17 @@ app.use(
   })
 );
 
-/* --------------------------- CORS CONFIG (UPDATED) --------------------------- */
-const FRONTEND = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
-
+/* --------------------------- CORS CONFIG (VERY IMPORTANT) --------------------------- */
 const allowedOrigins = [
-  FRONTEND,
   "http://localhost:5173",
   "https://solclothing-new.vercel.app",
-  "https://xn--slclothing-gbb.com"   // your correct domain
+  "https://xn--slclothing-gbb.com", // ✅ YOUR LIVE DOMAIN
 ];
 
 app.use(
   cors({
     origin: allowedOrigins,
-    credentials: true,
+    credentials: true, // MUST for cookies
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   })
@@ -68,11 +65,9 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/hoodieImg", express.static(path.join(__dirname, "hoodieImg")));
 
 /* --------------------------- KEEP-ALIVE ROUTE --------------------------- */
-app.get("/ping", (req, res) => {
-  res.status(200).send("pong");
-});
+app.get("/ping", (req, res) => res.status(200).send("pong"));
 
-/* --------------------------- ROUTES --------------------------- */
+/* --------------------------- API ROUTES --------------------------- */
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/products", require("./routes/product"));
 app.use("/api/orders", require("./routes/orderRoutes"));
@@ -91,7 +86,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-/* --------------------------- START SERVER (ONLY FOR LOCAL) --------------------------- */
+/* --------------------------- START SERVER (LOCAL ONLY) --------------------------- */
 if (process.env.VERCEL !== "1") {
   app.listen(PORT, () =>
     console.log(`🚀 Server running at: http://localhost:${PORT}`)
