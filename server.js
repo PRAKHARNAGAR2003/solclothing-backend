@@ -48,7 +48,6 @@ const FRONTEND = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
 const allowedOrigins = [
   FRONTEND,
   "http://localhost:5173",
-  "https://solclothing.netlify.app",
   "https://solclothing-new.vercel.app",
   "https://xn--slclothing-gbb.com"   // your correct domain
 ];
