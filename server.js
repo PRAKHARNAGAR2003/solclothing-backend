@@ -12,7 +12,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 /* -------------------- FIX FOR VERCEL PROXY -------------------- */
-app.set("trust proxy", 1); // ⭐ REQUIRED TO STOP X-FORWARDED-FOR & RATE LIMIT ERRORS
+app.set("trust proxy", 1);
 
 /* -------------------- CONNECT DB -------------------- */
 connectDB();
@@ -23,14 +23,14 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan("dev"));
 
-/* -------------------- CORS (FINAL FIXED VERSION) -------------------- */
+/* -------------------- CORS -------------------- */
 const allowedOrigins = [
   "https://xn--slclothing-gbb.com",
   "https://www.xn--slclothing-gbb.com",
   "https://solclothing-new.vercel.app",
-  "https://solclothing-backend.vercel.app",   // ⭐ ADDED THIS
+  "https://solclothing-backend.vercel.app",
   "http://localhost:5173",
-  "http://localhost:3000"
+  "http://localhost:3000",
 ];
 
 app.use((req, res, next) => {
@@ -51,9 +51,7 @@ app.use((req, res, next) => {
   );
   res.header("Access-Control-Expose-Headers", "Set-Cookie");
 
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(204);
-  }
+  if (req.method === "OPTIONS") return res.sendStatus(204);
 
   next();
 });
@@ -78,6 +76,9 @@ app.use(
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/hoodieImg", express.static(path.join(__dirname, "hoodieImg")));
 
+// ⭐ CRITICAL FIX — alias lowercase path used in DB
+app.use("/hoodieimg", express.static(path.join(__dirname, "hoodieImg")));
+
 /* -------------------- ROUTES -------------------- */
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/products", require("./routes/product"));
@@ -85,7 +86,7 @@ app.use("/api/orders", require("./routes/orderRoutes"));
 app.use("/api/payment", require("./routes/payment"));
 app.use("/api/reviews", require("./routes/reviewRoutes"));
 
-/* -------------------- HEALTH -------------------- */
+/* -------------------- HEALTH CHECK -------------------- */
 app.get("/", (req, res) => {
   res.send("Backend OK + Vercel Express Running");
 });
@@ -95,5 +96,4 @@ if (process.env.VERCEL !== "1") {
   app.listen(PORT, () => console.log("Server running on port", PORT));
 }
 
-/* -------------------- EXPORT FOR VERCEL -------------------- */
 module.exports = app;
