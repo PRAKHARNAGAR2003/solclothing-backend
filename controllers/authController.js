@@ -6,14 +6,18 @@ const sendEmail = require("../utils/sendEmail");
 const passwordResetTemplate = require("../utils/emailTemplate");
 
 // ------------------------------------------------------
-// COOKIE SETTINGS (WORKS WITH SAME DOMAIN)
+// COOKIE SETTINGS (WORKS ON VERCEL + CUSTOM DOMAIN)
 // ------------------------------------------------------
 const cookieOptions = {
   httpOnly: true,
-  sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+  sameSite: "None", // ⭐ required for cross-site cookies on vercel
   secure: process.env.NODE_ENV === "production",
   path: "/",
   maxAge: 7 * 24 * 60 * 60 * 1000,
+  domain:
+    process.env.NODE_ENV === "production"
+      ? "xn--slclothing-gbb.com" // ⭐ only applied on production
+      : undefined,
 };
 
 // ------------------------------------------------------
@@ -31,7 +35,7 @@ const setTokenCookie = (user, res) => {
 };
 
 // ------------------------------------------------------
-// ⭐ ADMIN TOKEN COOKIE — FIXED (NO DOMAIN)
+// ⭐ ADMIN TOKEN COOKIE (NOW FIXED)
 // ------------------------------------------------------
 const setAdminTokenCookie = (user, res) => {
   const token = jwt.sign(
@@ -40,17 +44,17 @@ const setAdminTokenCookie = (user, res) => {
     { expiresIn: "7d" }
   );
 
-  res.cookie("adminToken", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "None",
-    path: "/",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
+  res.cookie(
+    "adminToken",
+    token,
+    {
+      ...cookieOptions,       // ⭐ use same config
+      httpOnly: true,
+    }
+  );
 
   return token;
 };
-
 
 // ------------------------------------------------------
 // USER REGISTRATION
@@ -153,8 +157,8 @@ exports.adminLogin = async (req, res) => {
 // ------------------------------------------------------
 exports.logoutUser = async (req, res) => {
   try {
-    res.clearCookie("token", { httpOnly: true, path: "/" });
-    res.clearCookie("adminToken", { httpOnly: true, path: "/" });
+    res.clearCookie("token", { ...cookieOptions, maxAge: 0 });
+    res.clearCookie("adminToken", { ...cookieOptions, maxAge: 0 });
 
     res.status(200).json({ success: true, message: "Logged out" });
   } catch (err) {
