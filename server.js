@@ -20,12 +20,45 @@ connectDB()
     process.exit(1);
   });
 
-/* --------------------------- MIDDLEWARE --------------------------- */
+/* --------------------------- BASIC MIDDLEWARE --------------------------- */
 app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan("dev"));
 
+/* --------------------------- FIXED CORS CONFIG --------------------------- */
+const allowedOrigins = [
+  "https://xn--slclothing-gbb.com",
+  "https://www.xn--slclothing-gbb.com",
+
+  // Vercel frontend preview
+  "https://solclothing-new.vercel.app",
+
+  // Local dev
+  "http://localhost:5173",
+  "http://localhost:3000",
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+
+      console.log("❌ CORS BLOCKED:", origin);
+      return callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+    methods: "GET,POST,PUT,DELETE,OPTIONS",
+    allowedHeaders: "Content-Type, Authorization",
+    exposedHeaders: ["Set-Cookie"],
+  })
+);
+
+// 🔥 Preflight fix — must respond OK
+app.options("*", cors());
+
+/* --------------------------- HELMET (MUST COME AFTER CORS) --------------------------- */
 app.use(
   helmet({
     contentSecurityPolicy: false,
@@ -33,6 +66,7 @@ app.use(
   })
 );
 
+/* --------------------------- RATE LIMIT --------------------------- */
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -41,45 +75,6 @@ app.use(
     legacyHeaders: false,
   })
 );
-
-/* --------------------------- CREDENTIAL HEADER (VERY IMPORTANT) --------------------------- */
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Credentials", "true");
-  next();
-});
-
-/* --------------------------- CORS CONFIG --------------------------- */
-// -------------------- FIXED CORS CONFIG FOR VERCEL --------------------
-const allowedOrigins = [
-  "https://xn--slclothing-gbb.com",
-  "https://www.xn--slclothing-gbb.com",
-  "https://solclothing-new.vercel.app",
-  "http://localhost:5173",
-  "http://localhost:3000",
-];
-
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-  }
-
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-
-  // Handle preflight request
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
-
-  next();
-});
-
-
-// Preflight handler
-app.options("*", cors());
 
 /* --------------------------- STATIC FILES --------------------------- */
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -114,5 +109,5 @@ if (process.env.VERCEL !== "1") {
   );
 }
 
-/* --------------------------- EXPORT APP FOR VERCEL --------------------------- */
+/* --------------------------- EXPORT APP --------------------------- */
 module.exports = app;
