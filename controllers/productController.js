@@ -7,7 +7,7 @@ const path = require("path");
 ---------------------------------------------------------- */
 const fixImagePath = (str) => {
   if (!str) return str;
-  return str.replace("/hoodieImg", "/hoodieimg");
+  return str.replace(/\/hoodieImg/gi, "/hoodieimg");
 };
 
 /* ----------------------------------------------------------
