@@ -17,7 +17,7 @@ exports.createProduct = async (req, res) => {
       isCouplePack,
       coupleA,
       coupleB,
-      images
+      images,
     } = req.body;
 
     // 🛑 Required fields check
@@ -28,9 +28,9 @@ exports.createProduct = async (req, res) => {
       });
     }
 
-    /* ----------------------------------------
-     * PARSE NESTED JSON FIELDS
-     * ---------------------------------------- */
+    // ----------------------------------------
+    // PARSE NESTED JSON FIELDS
+    // ----------------------------------------
     const parseField = (field, fallback) => {
       try {
         return typeof field === "string" ? JSON.parse(field) : field || fallback;
@@ -45,9 +45,36 @@ exports.createProduct = async (req, res) => {
     const parsedCoupleB = parseField(coupleB, []);
     const parsedImages = parseField(images, []);
 
-    /* ----------------------------------------
-     * ADD COUPLE PACK IMAGES INTO MAIN ARRAY
-     * ---------------------------------------- */
+    // ----------------------------------------
+    // FIX IMAGE PATHS → ALWAYS USE /hoodieimg/
+    // ----------------------------------------
+    const fixImagePath = (img) => {
+      if (!img) return img;
+      return img.replace("/hoodieImg", "/hoodieimg"); // FIX CAPITAL I
+    };
+
+    parsedImages.forEach((img, index) => {
+      parsedImages[index] = fixImagePath(img);
+    });
+
+    parsedVariants.forEach((v) => {
+      v.frontImage = fixImagePath(v.frontImage);
+      v.backImage = fixImagePath(v.backImage);
+    });
+
+    parsedCoupleA.forEach((v) => {
+      v.frontImage = fixImagePath(v.frontImage);
+      v.backImage = fixImagePath(v.backImage);
+    });
+
+    parsedCoupleB.forEach((v) => {
+      v.frontImage = fixImagePath(v.frontImage);
+      v.backImage = fixImagePath(v.backImage);
+    });
+
+    // ----------------------------------------
+    // ADD COUPLE PACK IMAGES TO MAIN ARRAY
+    // ----------------------------------------
     if (isCouplePack === true || isCouplePack === "true") {
       parsedCoupleA.forEach((v) => {
         if (v.frontImage) parsedImages.push(v.frontImage);
@@ -60,9 +87,9 @@ exports.createProduct = async (req, res) => {
       });
     }
 
-    /* ----------------------------------------
-     * CREATE PRODUCT DOCUMENT
-     * ---------------------------------------- */
+    // ----------------------------------------
+    // CREATE PRODUCT DOCUMENT
+    // ----------------------------------------
     const product = new Product({
       name,
       description,
@@ -71,37 +98,33 @@ exports.createProduct = async (req, res) => {
       gender,
       sizes,
 
-      // ⭐ NORMAL VARIANTS (WITH SIZE STOCK)
       variants: parsedVariants.map((v) => ({
         colorName: v.colorName,
         colorHex: v.colorHex,
-        frontImage: v.frontImage,
-        backImage: v.backImage,
-        sizesStock: v.sizesStock || {}
+        frontImage: fixImagePath(v.frontImage),
+        backImage: fixImagePath(v.backImage),
+        sizesStock: v.sizesStock || {},
       })),
 
       isCouplePack: isCouplePack === true || isCouplePack === "true",
 
-      // ⭐ COUPLE A
       coupleA: parsedCoupleA.map((v) => ({
         colorName: v.colorName,
         colorHex: v.colorHex,
-        frontImage: v.frontImage,
-        backImage: v.backImage,
-        sizesStock: v.sizesStock || {}
+        frontImage: fixImagePath(v.frontImage),
+        backImage: fixImagePath(v.backImage),
+        sizesStock: v.sizesStock || {},
       })),
 
-      // ⭐ COUPLE B
       coupleB: parsedCoupleB.map((v) => ({
         colorName: v.colorName,
         colorHex: v.colorHex,
-        frontImage: v.frontImage,
-        backImage: v.backImage,
-        sizesStock: v.sizesStock || {}
+        frontImage: fixImagePath(v.frontImage),
+        backImage: fixImagePath(v.backImage),
+        sizesStock: v.sizesStock || {},
       })),
 
-      // ⭐ Save all images
-      images: parsedImages
+      images: parsedImages,
     });
 
     await product.save();
@@ -121,7 +144,6 @@ exports.createProduct = async (req, res) => {
 // 🛍️ Get all products
 exports.getProducts = async (req, res) => {
   try {
-    // ⭐ FIXED: .lean() ensures updated nested stock is returned
     const products = await Product.find({}).lean();
     res.json({ success: true, products });
   } catch (err) {
@@ -133,7 +155,6 @@ exports.getProducts = async (req, res) => {
 // 🧠 Get single product
 exports.getProductById = async (req, res) => {
   try {
-    // ⭐ FIXED: .lean() ensures updated nested sizesStock is returned
     const product = await Product.findById(req.params.id).lean();
 
     if (!product)
@@ -188,7 +209,9 @@ exports.uploadImage = async (req, res) => {
         .status(400)
         .json({ success: false, message: "No file uploaded" });
 
+    // ⭐ FIXED: Always lowercase hoodieimg
     const filePath = `/hoodieimg/${req.file.filename}`;
+
     res.json({ success: true, filePath });
   } catch (err) {
     console.error("uploadImage error:", err);
