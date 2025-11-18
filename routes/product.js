@@ -5,10 +5,10 @@ const path = require("path");
 const Product = require("../models/Product");
 
 /* --------------------------- MULTER CONFIG --------------------------- */
-/* ⭐ FIXED: Correct folder name — hoodieImg (capital I) */
+/* ⭐ FIXED: Correct folder name — hoodieimg (lowercase) */
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "../hoodieImg"));  // FIXED
+    cb(null, path.join(__dirname, "../hoodieimg"));  // FIXED lowercase
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + "-" + file.originalname.replace(/\s+/g, "_"));
@@ -31,8 +31,8 @@ router.post("/upload", protectAdmin, upload.single("file"), (req, res) => {
     });
   }
 
-  /* ⭐ FIXED: hoodieImg path */
-  const filePath = `/hoodieImg/${req.file.filename}`; 
+  /* ⭐ FIXED: hoodieimg path (lowercase) */
+  const filePath = `/hoodieimg/${req.file.filename}`;
   const fullUrl = `${req.protocol}://${req.get("host")}${filePath}`;
 
   console.log("📸 Uploaded:", filePath);
@@ -51,9 +51,9 @@ router.post("/", protectAdmin, upload.array("images", 10), async (req, res) => {
   try {
     console.log("📦 Incoming product data:", req.body);
 
-    /* ⭐ FIXED hoodieImg path */
+    /* ⭐ FIXED hoodieimg path */
     const imagePaths = Array.isArray(req.files)
-      ? req.files.map((file) => `/hoodieImg/${file.filename}`)   // FIXED
+      ? req.files.map((file) => `/hoodieimg/${file.filename}`) // FIXED lowercase
       : [];
 
     const parseJSON = (field) => {
@@ -75,13 +75,13 @@ router.post("/", protectAdmin, upload.array("images", 10), async (req, res) => {
     /* ⭐ Add couple pack images safely */
     if (req.body.isCouplePack === "true" || req.body.isCouplePack === true) {
       coupleA.forEach((v) => {
-        if (v.frontImage) imagePaths.push(v.frontImage);
-        if (v.backImage) imagePaths.push(v.backImage);
+        if (v.frontImage) imagePaths.push(v.frontImage.replace("/hoodieImg", "/hoodieimg"));
+        if (v.backImage) imagePaths.push(v.backImage.replace("/hoodieImg", "/hoodieimg"));
       });
 
       coupleB.forEach((v) => {
-        if (v.frontImage) imagePaths.push(v.frontImage);
-        if (v.backImage) imagePaths.push(v.backImage);
+        if (v.frontImage) imagePaths.push(v.frontImage.replace("/hoodieImg", "/hoodieimg"));
+        if (v.backImage) imagePaths.push(v.backImage.replace("/hoodieImg", "/hoodieimg"));
       });
     }
 
