@@ -1,13 +1,18 @@
 const Product = require("../models/Product");
 const path = require("path");
 
-// Utility: fix uppercase/lowercase mismatch
-const fixImagePath = (p) => {
-  if (!p) return p;
-  return p.replace("/hoodieImg", "/hoodieimg"); // <-- FIX
+/* ----------------------------------------------------------
+   ⭐ FIX CASE-SENSITIVITY FOR IMAGES
+   Convert all /hoodieImg → /hoodieimg before saving
+---------------------------------------------------------- */
+const fixImagePath = (str) => {
+  if (!str) return str;
+  return str.replace("/hoodieImg", "/hoodieimg");
 };
 
-// 🧾 Create new product (Admin only)
+/* ----------------------------------------------------------
+   CREATE PRODUCT
+---------------------------------------------------------- */
 exports.createProduct = async (req, res) => {
   try {
     console.log("📦 Incoming product data:", req.body);
@@ -23,7 +28,7 @@ exports.createProduct = async (req, res) => {
       isCouplePack,
       coupleA,
       coupleB,
-      images
+      images,
     } = req.body;
 
     if (!name || !price || !category || !gender) {
@@ -35,7 +40,9 @@ exports.createProduct = async (req, res) => {
 
     const parseField = (field, fallback) => {
       try {
-        return typeof field === "string" ? JSON.parse(field) : field || fallback;
+        return typeof field === "string"
+          ? JSON.parse(field)
+          : field || fallback;
       } catch {
         return fallback;
       }
@@ -46,48 +53,56 @@ exports.createProduct = async (req, res) => {
     let parsedCoupleB = parseField(coupleB, []);
     let parsedImages = parseField(images, []);
 
-    // ⭐ FIX image paths inside variants
-    parsedVariants = parsedVariants.map(v => ({
+    /* ----------------------------------------------------------
+       ⭐ FIX PATHS INSIDE VARIANTS
+    ---------------------------------------------------------- */
+    parsedVariants = parsedVariants.map((v) => ({
       ...v,
       frontImage: fixImagePath(v.frontImage),
       backImage: fixImagePath(v.backImage),
     }));
 
-    parsedCoupleA = parsedCoupleA.map(v => ({
+    parsedCoupleA = parsedCoupleA.map((v) => ({
       ...v,
       frontImage: fixImagePath(v.frontImage),
       backImage: fixImagePath(v.backImage),
     }));
 
-    parsedCoupleB = parsedCoupleB.map(v => ({
+    parsedCoupleB = parsedCoupleB.map((v) => ({
       ...v,
       frontImage: fixImagePath(v.frontImage),
       backImage: fixImagePath(v.backImage),
     }));
 
-    // ⭐ FIX images[] paths
-    parsedImages = parsedImages.map(img => fixImagePath(img));
+    /* ----------------------------------------------------------
+       ⭐ FIX MAIN IMAGES[] TOO
+    ---------------------------------------------------------- */
+    parsedImages = parsedImages.map((img) => fixImagePath(img));
 
-    // ⭐ Add variant images into main images[] if empty
+    /* ----------------------------------------------------------
+       ⭐ IF images[] IS EMPTY — AUTO ADD VARIANT IMAGES
+    ---------------------------------------------------------- */
     if (parsedImages.length === 0) {
-      parsedVariants.forEach(v => {
+      parsedVariants.forEach((v) => {
         if (v.frontImage) parsedImages.push(v.frontImage);
         if (v.backImage) parsedImages.push(v.backImage);
       });
     }
 
-    // ⭐ Add couple images also
     if (isCouplePack === true || isCouplePack === "true") {
-      parsedCoupleA.forEach(v => {
+      parsedCoupleA.forEach((v) => {
         if (v.frontImage) parsedImages.push(v.frontImage);
         if (v.backImage) parsedImages.push(v.backImage);
       });
-      parsedCoupleB.forEach(v => {
+      parsedCoupleB.forEach((v) => {
         if (v.frontImage) parsedImages.push(v.frontImage);
         if (v.backImage) parsedImages.push(v.backImage);
       });
     }
 
+    /* ----------------------------------------------------------
+       ⭐ CREATE DOCUMENT
+    ---------------------------------------------------------- */
     const product = new Product({
       name,
       description,
@@ -99,7 +114,7 @@ exports.createProduct = async (req, res) => {
       isCouplePack: isCouplePack === true || isCouplePack === "true",
       coupleA: parsedCoupleA,
       coupleB: parsedCoupleB,
-      images: parsedImages
+      images: parsedImages,
     });
 
     await product.save();
@@ -116,7 +131,9 @@ exports.createProduct = async (req, res) => {
   }
 };
 
-// 🛍️ Get all products
+/* ----------------------------------------------------------
+   GET ALL PRODUCTS
+---------------------------------------------------------- */
 exports.getProducts = async (req, res) => {
   try {
     const products = await Product.find({}).lean();
@@ -127,13 +144,17 @@ exports.getProducts = async (req, res) => {
   }
 };
 
-// 🧠 Get single product
+/* ----------------------------------------------------------
+   GET SINGLE PRODUCT
+---------------------------------------------------------- */
 exports.getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id).lean();
 
     if (!product)
-      return res.status(404).json({ success: false, message: "Product not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Product not found" });
 
     res.json({ success: true, product });
   } catch (err) {
@@ -142,17 +163,19 @@ exports.getProductById = async (req, res) => {
   }
 };
 
-// ✏️ Update product
+/* ----------------------------------------------------------
+   UPDATE PRODUCT
+---------------------------------------------------------- */
 exports.updateProduct = async (req, res) => {
   try {
     const update = { ...req.body };
 
-    // FIX PATHS on update too
+    // Fix paths on update also
     if (update.images)
-      update.images = update.images.map(i => fixImagePath(i));
+      update.images = update.images.map((i) => fixImagePath(i));
 
     if (update.variants)
-      update.variants = update.variants.map(v => ({
+      update.variants = update.variants.map((v) => ({
         ...v,
         frontImage: fixImagePath(v.frontImage),
         backImage: fixImagePath(v.backImage),
@@ -163,7 +186,9 @@ exports.updateProduct = async (req, res) => {
     });
 
     if (!updated)
-      return res.status(404).json({ success: false, message: "Product not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Product not found" });
 
     res.json({ success: true, product: updated });
   } catch (err) {
@@ -172,12 +197,17 @@ exports.updateProduct = async (req, res) => {
   }
 };
 
-// 🗑️ Delete product
+/* ----------------------------------------------------------
+   DELETE PRODUCT
+---------------------------------------------------------- */
 exports.deleteProduct = async (req, res) => {
   try {
     const deleted = await Product.findByIdAndDelete(req.params.id);
+
     if (!deleted)
-      return res.status(404).json({ success: false, message: "Product not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Product not found" });
 
     res.json({ success: true, message: "Product deleted" });
   } catch (err) {
@@ -186,13 +216,17 @@ exports.deleteProduct = async (req, res) => {
   }
 };
 
-// 📸 Upload product images
+/* ----------------------------------------------------------
+   IMAGE UPLOAD
+---------------------------------------------------------- */
 exports.uploadImage = async (req, res) => {
   try {
     if (!req.file)
-      return res.status(400).json({ success: false, message: "No file uploaded" });
+      return res
+        .status(400)
+        .json({ success: false, message: "No file uploaded" });
 
-    const filePath = `/hoodieimg/${req.file.filename}`; // FIX lowercase
+    const filePath = `/hoodieimg/${req.file.filename}`; // FIXED (lowercase)
     res.json({ success: true, filePath });
   } catch (err) {
     console.error("uploadImage error:", err);
